@@ -7,6 +7,7 @@
 | 1    | [好用的依赖注入框架-Hilt](https://juejin.cn/post/6970580755520946213) | 总结如何使用Hilt      | Jetpack  |
 | 2    | [将Room的使用方式塞到脑子里](https://juejin.cn/post/6992875656707211271) | 总结如何使用Room      | Jetpack  |
 | 3    | [在Android中使用Bsdiff实现增量更新 ](https://juejin.cn/post/7004809959724548132) | 实现Android的增量更新 | 增量更新 |
+| 4    | Behavior的滑动效果                                           | 源码及应用            | 源码     |
 
 
 
