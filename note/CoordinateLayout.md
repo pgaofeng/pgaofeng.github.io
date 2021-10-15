@@ -79,7 +79,7 @@ Behavior还有一个泛型，这个泛型是用于设置当前的Behavior可以�
 
 Behavior主要有两种能力，处理view之间的依赖关系以及处理view之间的嵌套滑动关系。 依赖关系就是某个view依赖于另一个view，当另一个view发生变化的时候，该view也会随之发生变化。可以在Behavior中去定义这种依赖关系。
 
-###### layoutDependsOn
+###### layoutDependsOn 确定依赖关系
 
 ```java
 public boolean layoutDependsOn(
@@ -91,7 +91,9 @@ public boolean layoutDependsOn(
 
 在Behavior中，使用layoutDependsOn来确定依赖关系。这个方法有三个参数，第一个参数是父布局parent；第二个参数是设置了Behavior的那个View，被称为child；第三个参数就是依赖的view。我们需要做的就是在这个方法中去判断child与这个view是否需要存在依赖关系，若是存在依赖的话，则返回true，否则返回false。Behavior会遍历除了child外的其他view，然后将其带入这个方法去判断是否是依赖的对象。
 
-###### onDependentViewChanged
+> 在Behavior中，都是使用parent来代表父布局CoordinateLayout，child来代表设置了Behavior的子view，dependency代表依赖的view。
+
+###### onDependentViewChanged 处理依赖行为
 
 ```java
 public boolean onDependentViewChanged(
@@ -101,9 +103,23 @@ public boolean onDependentViewChanged(
 )
 ```
 
-依赖的view发生变化后（位置发生变化或者尺寸发生变化），就会调用这个方法。因此，若是定义了依赖关系，则需要在这个方法中去处理具体的行为。
+依赖的view发生变化后（位置发生变化或者尺寸发生变化），就会调用这个方法。因此，若是定义了依赖关系，则需要在这个方法中去处理具体的行为。这个方法还有个boolean的返回值，用于判断是否发生了依赖行为。也就是当child发生了位置或者尺寸的变化时，表明发生了依赖行为，此时应该返回true。
 
-注意，依赖是可以存在多个依赖的。也就是一个child可以依赖多个dependency，这个关系是layoutDependsOn方法所确定的，当返回true的时候就是确定了依赖关系。因此不论是哪个依赖的view发生变化，都会触发onDependentViewChanged的调用。
+注意，依赖是可以存在多个依赖的。也就是一个child可以依赖多个dependency，这个关系是layoutDependsOn方法所确定的，当它返回true的时候就是确定了依赖关系。因此不论是哪个依赖的view发生变化，都会触发onDependentViewChanged的调用。
+
+###### onDependentViewRemoved 移除依赖
+
+```java
+public void onDependentViewRemoved(
+	@NonNull CoordinatorLayout parent, 
+	@NonNull V child,
+    @NonNull View dependency
+)
+```
+
+onDependentViewRemoved 方法是在被依赖的view从父布局中移除的时候调用，该方法用于当依赖消失的时候（被依赖的view从父布局中移除，也就是关于它的依赖关系消失了）child的行为。
+
+
 
 ###### 小例子
 
@@ -168,6 +184,14 @@ public boolean onDependentViewChanged(
           child.y = dependency.height + dependency.translationY
           return true
       }
+      
+       override fun onDependentViewRemoved(
+          parent: CoordinatorLayout, child: View,
+          dependency: View
+      ) {
+          // 当被依赖的view被移除的时候，将child的位置重置在界面顶部
+          child.y = 0F
+      }
   
   }
   ```
@@ -177,14 +201,17 @@ public boolean onDependentViewChanged(
 - 3，在xml中使用Behavior
 
   ```xml
+  <?xml version="1.0" encoding="utf-8"?>
   <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto"
       xmlns:tools="http://schemas.android.com/tools"
+      android:id="@+id/parent"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
       tools:context=".MainActivity">
   
       <com.study.androidbehavior.widget.MovableButton
+          android:id="@+id/movable_button"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content" />
   
@@ -194,9 +221,92 @@ public boolean onDependentViewChanged(
           android:layout_height="wrap_content"
           android:src="@mipmap/bg"
           app:layout_behavior=".behavior.BelowBehavior" />
+      
+      <Button
+          android:id="@+id/button_remove"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="end"
+          android:text="移除按钮" />
   
   </androidx.coordinatorlayout.widget.CoordinatorLayout>
   ```
 
-在xml中，CoordinatorLayout一共有两个子view，并且给ImageView设置BelowBehavior。那么这种情况下，就是ImageView会一直跟在MovableButton的下面，MovableButton的位置发生变化的时候，ImageView也会跟着一起变，总之就是一直在它的下面。
+在xml中，CoordinatorLayout一共有三个子view，并且给ImageView设置BelowBehavior。那么这种情况下，就是ImageView会一直跟在MovableButton的下面，MovableButton的位置发生变化的时候，ImageView也会跟着一起变，总之就是一直在它的下面。
+
+- 4，在MainActivity中设置点击按钮移除，用于触发onDependentViewRemoved事件
+
+  ```kotlin
+  class MainActivity : AppCompatActivity() {
+  
+      private lateinit var mParent: CoordinatorLayout
+      private lateinit var mButtonMovable: MovableButton
+      private lateinit var mButtonRemove: Button
+  
+      override fun onCreate(savedInstanceState: Bundle?) {
+          super.onCreate(savedInstanceState)
+          setContentView(R.layout.activity_main)
+  
+          mParent = findViewById(R.id.parent)
+          mButtonMovable = findViewById(R.id.movable_button)
+          mButtonRemove = findViewById(R.id.button_remove)
+          mButtonRemove.setOnClickListener {
+              mParent.removeView(mButtonMovable)
+          }
+      }
+  }
+  ```
+  
+  在MainActivity中给被依赖的view添加了一个点击事件，当点击这个按钮的时候，就会将可移动的按钮从父布局中移除，此时会触发依赖移除的方法，ImageView就会被移动到界面顶部。
+
+![Behavior的依赖行为](../images/behavior-dependency.gif)
+
+
+
+##### 自定义布局
+
+前面有说过，CoordinateLayout可以当成一个FrameLayout来使用，它的测量和布局过程都是和FrameLayout一样的。但是，这只是它默认的行为，我们实际上可以通过Behavior来实现自定义的测量和布局过程。
+
+###### onLayoutChild
+
+```java
+boolean onLayoutChild(
+	@NonNull CoordinatorLayout parent, 
+	@NonNull V child,
+    int layoutDirection
+)
+```
+
+在Behavior中，通过onLayoutChild方法去自定义布局。他有一个返回值，处理完自定义布局后，需要返回true来标识确定要自定义布局，否则是无效的。在这个方法中，我们应该只去对child进行布局，而不应该对所有的view进行布局。第三个参数layoutDirection我们基本上不用去关注，它是用于判断布局的方向的，从左到右或者从右到左，因为大部分的国家的书写顺序都是从左到右的。
+
+###### onMeasureChild
+
+```java
+boolean onMeasureChild(
+	@NonNull CoordinatorLayout parent, 
+	@NonNull V child,
+    int parentWidthMeasureSpec,
+    int widthUsed,
+    int parentHeightMeasureSpec, 
+    int heightUsed
+)
+```
+
+与之类似，也可以使用这个方法去对child进行自定义的测量。在没有设置Behavior或者Behavior中没有去干涉测量和布局的情况下，默认的测量布局过程都是与FrameLayout一致的。因此可以根据需求去决定是否需要自定义这个过程。
+
+实际上，自定义测量过程实际用的并不多，毕竟默认的测量过程基本上已经满足我们的需求了。更多用的是布局过程，
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
