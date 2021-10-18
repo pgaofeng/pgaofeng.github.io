@@ -279,6 +279,8 @@ boolean onLayoutChild(
 
 在Behavior中，通过onLayoutChild方法去自定义布局。他有一个返回值，处理完自定义布局后，需要返回true来标识确定要自定义布局，否则是无效的。在这个方法中，我们应该只去对child进行布局，而不应该对所有的view进行布局。第三个参数layoutDirection我们基本上不用去关注，它是用于判断布局的方向的，从左到右或者从右到左，因为大部分的国家的书写顺序都是从左到右的。
 
+若是在onDependentViewChanged中若是修改了view的位置(layout)，则应该重写onLayoutchild方法，去保证每个状态的位置的稳定。
+
 ###### onMeasureChild
 
 ```java
@@ -294,9 +296,46 @@ boolean onMeasureChild(
 
 与之类似，也可以使用这个方法去对child进行自定义的测量。在没有设置Behavior或者Behavior中没有去干涉测量和布局的情况下，默认的测量布局过程都是与FrameLayout一致的。因此可以根据需求去决定是否需要自定义这个过程。
 
-实际上，自定义测量过程实际用的并不多，毕竟默认的测量过程基本上已经满足我们的需求了。更多用的是布局过程，
+实际上，自定义测量过程实际用的并不多，毕竟默认的测量过程基本上已经满足我们的需求了，更多用的是布局过程。默认的布局过程是像FrameLayout那样全部堆在左上角的，因此需要我们重写布局过程去实现自己想要的效果。
 
+###### 小例子
 
+定义一个Behavior，重写他的onLayoutChild方法，将其child设置到MovableButton的右侧。
+
+```kotlin
+class LayoutBehavior(
+    context: Context,
+    attr: AttributeSet
+) : CoordinatorLayout.Behavior<View>(context, attr) {
+
+    override fun onLayoutChild(
+        parent: CoordinatorLayout,
+        child: View,
+        layoutDirection: Int
+    ): Boolean {
+        // 去查找是否有MovableButton
+        var target: MovableButton? = null
+        for (i in 0 until parent.childCount) {
+            if (parent.getChildAt(i) is MovableButton) {
+                target = parent.getChildAt(i) as MovableButton
+                break
+            }
+        }
+        target ?: return false
+        // 将child放置在movableButton的右侧
+        child.layout(
+            target.right,
+            target.top,
+            target.right + child.measuredWidth,
+            target.top + child.measuredHeight
+        )
+        return true
+    }
+
+}
+```
+
+注意的是onLayoutChild只是代理了parent对child的布局过程，也就是说只有父View去layout的时候才会调用到这个方法。因此上面的例子虽然实现了在布局的时候将child置于MovableButton的右侧，但当MovableButton移动的时候，child并不会随之而动的。
 
 
 
