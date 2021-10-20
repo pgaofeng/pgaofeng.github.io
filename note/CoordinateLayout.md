@@ -14,9 +14,15 @@ CoordinateLayout，又称协调布局。主要作为一个调控者，用于控�
 
 Behavior是CoordinateLayout的一个抽象的静态内部类，CoordinateLayout就是通过它来实现各种炫酷的操作，从而变得super-powered。虽然Behavior是一个抽象类，但是它并没有抽象方法，所有的方法都有默认的方法体，方便开发者仅关注他们感兴趣的地方。
 
-Behavior只能作用在CoordinateLayout的子View上，并且一个Behavior只能对应一个子View，可以在xml中通过app:layout_behavior="xxx"来设置，xxx的值对应的是Behavior的完整类名，例如可以设置为com.study.androidbehavior.behavior.BelowBehavior，当然也可以使用省略包名的缩略类名如.behavior.BelowBehavior。当然最好是使用完整的类名。
+Behavior只能作用在CoordinateLayout的子View上，并且一个Behavior只能对应一个子View。可以通过三种方式去给子View设置Behavior：
 
-若是没有在xml中设置Behavior，还可以通过子View的CoordinateLayout.LayoutParams#setBehavior来设置。
+1，可以在xml中通过app:layout_behavior="xxx"来设置，xxx的值对应的是Behavior的完整类名，例如可以设置为com.study.androidbehavior.behavior.BelowBehavior，当然也可以使用省略包名的缩略类名如.behavior.BelowBehavior。推荐最好是使用完整的类名，因为有时候可能会出现包名不一致的情况。
+
+2，若是没有在xml中设置Behavior，还可以通过子View的CoordinateLayout.LayoutParams#setBehavior来设置，这时候需要手动去new一个Behavior然后设置给子View。
+
+3，也可以使用注解的方式设置，在需要设置Behavior的View类上使用注解@DefaultBehavior(BelowBehavior.class)。当然这种方式就要求必须自定义View，很不灵活，所以几乎不会使用这种方式。
+
+用的最多的是第一种方式，也就是在xml中设置。
 
 ##### 构造Behavior
 
@@ -335,7 +341,7 @@ class LayoutBehavior(
 }
 ```
 
-注意的是onLayoutChild只是代理了parent对child的布局过程，也就是说只有父View去layout的时候才会调用到这个方法。因此上面的例子虽然实现了在布局的时候将child置于MovableButton的右侧，但当MovableButton移动的时候，child并不会随之而动的。
+注意的是onLayoutChild只是接管了parent对child的布局过程，也就是说只有父View去layout的时候才会调用到这个方法。因此上面的例子虽然实现了在布局的时候将child置于MovableButton的右侧，但当MovableButton移动的时候，child并不会随之而动的。
 
 
 
