@@ -345,9 +345,40 @@ class LayoutBehavior(
 
 
 
+##### 拦截事件
 
+发生在CoordinateLayot中的事件都可以被Behavior所拦截，拦截方法也是和正常的事件拦截机制是一样的。首先通过onInterceptTouchEvent来判断是否需要拦截，是的话返回true，此时所有的事件都会分发到onTouch方法中。
 
+##### 嵌套滑动
 
+嵌套滑动指的是多个view嵌套在一起，并且都可以滚动。这时候当发生滚动的时候，就会出现问题，最主要的就是滑动不连贯的问题。
+
+因为在传统的View的滑动中，当一个view决定要消耗滑动事件的时候，这个系列的滑动事件（Down-Move-Move... -Up/Cancel）都会交给它。那么当它已经滑动到底部不能再滑动的时候，剩下的事件相当于是浪费了。
+
+而嵌套滑动主要就是解决的这个问题，可以将一套事件分发给多个view，让每个view都有机会参与这个滑动过程。例如内部的view滑动到底部后，剩下的事件就交给外部view去进行滑动，从而实现一种滑动的连续性。
+
+当然Behavior只是利用了View的嵌套滑动机制而已，当发生了嵌套滑动事件的时候，会先将事件依次分发给Behavior，然后才是滑动对象。
+
+###### onStartNestedScroll
+
+```java
+public boolean onStartNestedScroll(
+    @NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull V child, 
+    @NonNull View directTargetChild, 
+    @NonNull View target,
+    @ScrollAxis int axes, 
+    @NestedScrollType int type
+)
+```
+
+这是嵌套滑动开始的方法，当发生嵌套滑动的时候，会先调用这个方法，判断Behavior是否需要参与此次的滑动，返回true表示参与这个活动，才会有后续的方法调用，否则后续的事件都不会再回调到这个Behavior中。
+
+1，参数coordinatorLayout表示父布局，child表示设置了Behavior的子View。
+
+2，axes表示滑动的方向ViewCompat#SCROLL_AXIS_HORIZONTAL和ViewCompat#SCROLL_AXIS_VERTICAL。
+
+3，type表示滑动的类型ViewCompat#TYPE_TOUCH和ViewCompat#TYPE_NON_TOUCH。
 
 
 
