@@ -374,15 +374,102 @@ public boolean onStartNestedScroll(
 
 这是嵌套滑动开始的方法，当发生嵌套滑动的时候，会先调用这个方法，判断Behavior是否需要参与此次的滑动，返回true表示参与这个活动，才会有后续的方法调用，否则后续的事件都不会再回调到这个Behavior中。
 
-1，参数coordinatorLayout表示父布局，child表示设置了Behavior的子View。
+其中参数coordinatorLayout表示父布局，child表示设置了Behavior的子View。directTargetChild代表滑动view在CoordinateLayout中直接子布局，target代表滑动的子布局。axes表示滑动的方向ViewCompat#SCROLL_AXIS_HORIZONTAL和ViewCompat#SCROLL_AXIS_VERTICAL。type表示滑动的类型ViewCompat#TYPE_TOUCH和ViewCompat#TYPE_NON_TOUCH。
 
-2，axes表示滑动的方向ViewCompat#SCROLL_AXIS_HORIZONTAL和ViewCompat#SCROLL_AXIS_VERTICAL。
+```xml
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".view.TouchActivity">
 
-3，type表示滑动的类型ViewCompat#TYPE_TOUCH和ViewCompat#TYPE_NON_TOUCH。
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:itemCount="10"
+            tools:listitem="@layout/item_recycler" />
+
+    </FrameLayout>
+
+    ...
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+```
+
+如上这个布局文件，在RecyclerView发生滑动的时候，directTargetChild就是FrameLayout，而target就是RecyclerView。
+
+###### onNestedScrollAccepted
+
+```java
+public void onNestedScrollAccepted(
+	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull V child, 
+    @NonNull View directTargetChild, 
+    @NonNull View target,
+    @ScrollAxis int axes, 
+    @NestedScrollType int type
+)
+```
+
+onNestedScrollAccepted方法是在接收滚动事件后触发的，也就是onStartNestedScroll返回true后就会触发这个方法。可以将它看做是对onStartNestedScroll的补充，也就是开发者需要在onStartNestedScroll中判断是否要参与此次的滑动，而在决定参与后在onNestedScrollAccepted中去做滑动的前置准备，比如初始化状态等。
+
+###### onNestedPreScroll和onNestedScroll
+
+```java
+public void onNestedPreScroll(
+	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull V child, 
+    @NonNull View target, 
+    int dx, 
+    int dy, 
+    @NonNull int[] consumed,
+    @NestedScrollType int type
+)
+
+public void onNestedScroll(
+	@NonNull CoordinatorLayout coordinatorLayout, 
+	@NonNull V child,
+    @NonNull View target, 
+    int dxConsumed, 
+    int dyConsumed, 
+    int dxUnconsumed,
+    int dyUnconsumed, 
+    @NestedScrollType int type, 
+    @NonNull int[] consumed
+)
+```
+
+onNestedPreScroll和onNestedScroll也是一组的，他们会在滚动的时候持续被调用，并且是成对出现的。
+
+当发生滑动事件的时候，会先调用onNestedPreScroll方法，这个方法是用于处理滑动前的操作的，也就是在滑动前会将滑动的距离(参数dx和dy)传递进来，Behavior可以通过这个方法来提前消耗这些距离，消耗的距离需要放在参数consumed中(参数数组，consumed[0]是dx的消耗，consumed[1]是dy上的消耗)。例如本来RecyclerView要滑动100的距离，然后Behavior在这个方法中选择消耗了20的距离，那么实际传递到RecyclerView的距离则只有80。
+
+在onNestedPreScroll之后，滑动view会处理剩下的滑动，当滑动view处理完后，会将剩下的滑动再通过onNestedScroll传递过来，然后Behavior就可以在这个方法中继续处理滑动事件了。
+
+总结一下过程就是**子view发生了滑动事件->先传递到Behavior的onNestedPreScroll进行消耗->Behavior消耗剩下的事件才传给子view消耗->子view消耗后再剩下的事件传给Behavior的onNestedScroll消耗**。
 
 
 
+###### onStopNestedScroll
+
+这个方法是一个系列的事件发生结束后调用的，可以用于处理一些收尾工作。
 
 
 
+###### 补充
 
+在传统的嵌套滑动中，是通过NestedScrollingParent3和NestedScrollingChild3来将父View与子View进行区分的。要实现嵌套滑动，必须存在两个view，一个是外层的parent，一个是内部的child。
+
+CoordinateLayout中的嵌套滑动也是通过传统的嵌套滑动实现的，其中CoordinateLayout实现了NestedScrollingParent3接口，它是可以作为parent的。因此若要实现嵌套滑动，触发滑动的view必须实现NestedScrollingChild3接口。其中NestedScrollView和RecyclerView都是实现了Child接口的。
+
+而CoordinateLayout并没有去作为parent去处理嵌套滑动逻辑，而是将其都转发给了Behavior，可以看到Behavior的这些方法和NestedScrollingParent3中的方法基本上是一致的。所以设置了Behavior的子view都可以看做parent。
+
+###### 示例
+
+写一个示例来应用嵌套滑动的功能：
