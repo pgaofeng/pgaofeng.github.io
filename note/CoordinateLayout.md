@@ -473,3 +473,134 @@ CoordinateLayout中的嵌套滑动也是通过传统的嵌套滑动实现的，�
 ###### 示例
 
 写一个示例来应用嵌套滑动的功能：
+
+首先，在CoordinateLayout中放置两个view，一个是TextView，一个是简单的RecyclerView。
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".view.TouchActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:background="#0000FF" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#00FFFF"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:itemCount="10"
+        tools:listitem="@layout/item_recycler" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+```
+
+可以看到，这个布局非常简单，甚至TextView都没有设置文字，只是给了一个高度和背景颜色。并且直接运行的话，RecyclerView会直接覆盖在TextView上。因此给RecyclerView设置一个Behavior，让它处于TextView的下面。定义一个ToBottomBehavior，然后将它设置给RecyclerView：
+
+```kotlin
+class ToBottomBehavior(
+    context: Context,
+    attr: AttributeSet? = null
+    // 由于只给RecyclerView使用，所以这里泛型直接使用RecyclerView
+) : CoordinatorLayout.Behavior<RecyclerView>(context, attr) {
+
+    override fun onLayoutChild(
+        parent: CoordinatorLayout,
+        child: RecyclerView,
+        layoutDirection: Int
+    ): Boolean {
+        // 低于两个子View的时候不去布局了
+        if (parent.childCount < 2) {
+            return false
+        }
+        val firstView = parent.getChildAt(0)
+        child.layout(0, firstView.measuredHeight, child.measuredWidth, child.measuredHeight)
+        return true
+    }
+
+}
+
+-----------------------------------------------------------------
+<androidx.coordinatorlayout.widget.CoordinatorLayout...>
+    ...
+    <androidx.recyclerview.widget.RecyclerView
+		... 
+      	app:layout_behavior=".behavior.ToBottomBehavior"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+```
+
+在ToBottomBehavior中，只做了一件事，就是参与RecycleView的布局过程，并且将其放置在第一个View的下面。当布局完成后，RecycleView的高度并不是match_patent，而是match_parent的高度减去第一个view的高度。此时运行后的界面：
+
+![touch01](../images/touch01.jpg)
+
+现在是RecyclerView已经显示在TextView的下面了，然后继续修改，这次是让RecyclerView滚动的时候，先将顶部的TextView滚动到屏幕外，然后才是RecyclerView的滚动。定义一个TouchBehavior，然后将它设置给TextView：
+
+```kotlin
+class TouchBehavior(
+    context: Context,
+    attr: AttributeSet? = null
+) : CoordinatorLayout.Behavior<View>(context, attr) {
+
+    override fun onStartNestedScroll(
+        coordinatorLayout: CoordinatorLayout,
+        child: View,
+        directTargetChild: View,
+        target: View,
+        axes: Int,
+        type: Int
+    ): Boolean {
+        // 只拦截纵向的滚动
+        return axes == ViewCompat.SCROLL_AXIS_VERTICAL
+    }
+
+    override fun onNestedPreScroll(
+        coordinatorLayout: CoordinatorLayout,
+        child: View,
+        target: View,
+        dx: Int,
+        dy: Int,
+        consumed: IntArray,
+        type: Int
+    ) {
+        // 注意，手指向上滑动的时候，dy大于0。向下的时候dy小于0。
+        val translationY = child.translationY
+        if (-translationY >= child.measuredHeight || dy < 0) {
+            // child已经滚动到屏幕外了，或者向下滚动，就不去消耗滚动了
+            return
+        }
+        // 还差desireHeight距离将会移出屏幕外
+        val desireHeight = translationY + child.measuredHeight
+        if (dy <= desireHeight) {
+            // 将dy全部消耗掉
+            child.translationY = translationY - dy
+            consumed[1] = dy
+        } else {
+            // 消耗一部分的的dy
+            child.translationY = translationY - desireHeight
+            consumed[1] = desireHeight.toInt()
+        }
+    }
+
+}
+
+-----------------------------------
+<androidx.coordinatorlayout.widget.CoordinatorLayout ...>
+
+    <TextView
+        ...
+        app:layout_behavior=".behavior.TouchBehavior"/>
+    	...
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+```
+
+在TouchBehavior中，首先在onStartNestedScroll中判断滚动的方向，并且只参与纵向的滚动事件。然后省略了onNestedScrollAccepted方法，因此在这个示例中不需要做什么前置准备，因此直接在onNestedPreScroll中去做了滚动的处理。当发生滚动的时候，先消耗滚动距离dy用于将TextView滚出屏幕，接着才是将dy交给RecyclerView去处理。
+
+![嵌套滑动的滚动](../images/touch02.gif)
