@@ -1,6 +1,8 @@
+# 学习Behavior，先从它的使用开始入手
 
 
-要彻底弄明白Behavior，得从三个角度去思考。它是什么，能起到什么作用，它是如何实现的？
+
+学习Behavior，先从用法开始。因为用法是最简单易学的，因为它的复杂逻辑都会被隐藏在内部，暴露给外部使用的都是很简单易理解的方法，因此，学习需要从用法开始，再深入到源码理解思路。
 
 ## Behavior是什么
 
@@ -377,13 +379,167 @@ class BelowActivity : AppCompatActivity() {
 
 ### Behavior能力之touch事件
 
+在View的事件分发中，事件都是先分发给最里层的子View的，当子View决定不处理touch事件的时候，外层的父布局才会得到处理事件的机会。但这也不是一定的，因为父布局中有一个方法可以用来拦截事件，这样事件就会直接交给父布局进行处理，而不会传递给子View了。
+
+CoordinatorLayout作为一个父布局(ViewGroup)一定也是有这个拦截的功能的，但是同样的，它本身也没去实现拦截的机制，而是将这个功能抽象到Behavior中，由Behavior去决定CoordinatorLayout是否拦截此次的事件。当决定拦截了事件后，同样的CoordinatorLayout也不去处理这些事件，而是将这些事件传递给决定拦截事件的这些Behavior中，由Behavior去处理。
+
+#### 对应的方法
+
+```java
+public boolean onInterceptTouchEvent(
+	@NonNull CoordinatorLayout parent, 
+	@NonNull V child,
+    @NonNull MotionEvent ev
+)
+
+public boolean onTouchEvent(
+	@NonNull CoordinatorLayout parent, 
+	@NonNull V child,
+    @NonNull MotionEvent ev
+)
+```
+
+和ViewGroup一样的方法，通过onInterceptTouchEvent进行拦截，然后在onTouchEvent中去处理。注意的是Behavior中的所有能力都是从CoordinatorLayout中拓展出来的，也就是CoordinatorLayout将本该它自己做的工作转移到了Behavior中。因此，事件的分发过程是先到了CoordinatorLayout中，再对子View按照topMost的顺序进行分发的。topMost顺序就是从上到下，对应的子View是从后到前，也就是最后一个子View是最上层的。
+
+#### 小例子
+
+因为直接处理事件太麻烦了，所以这里没有小例子。
+
+
+
+### Behavior能力之嵌套滑动
+
+当两个可同向滑动的View嵌套在一起时，如ScrollView有一个子View是RecyclerView，那么当滚动的时候是先滚动ScrollView还是先滚动RecyclerView呢？假如是滚动RecyclerView，那么当RecyclerView快滚动到底部的时候，这时候来一个比较长的滚动，当RecyclerView滚动到底部后，剩下的滚动就是没有反应，并不会变成ScrollView接着滚动。这是由View的事件分发机制造成的，View事件分发中，当某个View处理事件的时候，这次的事件流就会全部交个它而不会给别的View。
+
+而嵌套滑动就是用来处理这种冲突的，尤其是它实现了将一个事件流交给多个view去处理这种功能，从而可以让滑动更加流畅更加符合我们的期望。它使用两套接口来实现这种功能，分别是NestedScrollingChild3和NestedScrollingParent3，对应着子View和父View，当然也可以同时实现这两个接口，这样就可以为所欲为了。
+
+虽然CoordinatorLayout也实现了NestedScrollingParent3接口，但是它并不是像传统的那种嵌套滑动一样来处理滑动事件，而是将滑动事件代理给了Behavior，也就是在嵌套滑动中，是Behavior来作为parent处理滑动事件的。也就是说，CoordinatorLayout中的嵌套滑动并不需要嵌套，同时，由于在嵌套滑动中作为parent的是Behavior，所以实际上想要作为parent的子View只需要设置Behavior即可，而不用去实现NestedScrollingChild3接口。
+
+总之，CoordinatorLayout使用嵌套滑动逻辑实现了一套不是嵌套滑动的嵌套滑动。
+
+> 注意，嵌套滑动必须由NestedScrollingChild3发起，RecyclerView就实现了这个方法
+
+#### 对应的方法
+
+```java
+public boolean onStartNestedScroll(
+    @NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull V child, 
+    @NonNull View directTargetChild, 
+    @NonNull View target,
+    @ScrollAxis int axes, 
+    @NestedScrollType int type
+)
+```
+
+这是嵌套滑动开始的方法，当发生嵌套滑动的时候，会先调用这个方法，判断Behavior是否需要参与此次的滑动，返回true表示参与这次滑动，才会有后续的方法调用，否则后续的事件都不会再回调到这个Behavior中。
+
+其中前两个参数不用说了，第三个参数directTargetChild是发生滑动的View在CoordinatorLayout中的直接子布局，而target表示的是发生滑动的那个View。当target直接出现在CoordinatorLayout中的时候，这时候的directTargetChild和target是同一个对象。如下布局中，directTargetChild就是FrameLayout，而target是RecyclerView。
+
+```xml
+<androidx.coordinatorlayout.widget.CoordinatorLayout...>
+
+    <FrameLayout...>
+        
+        <androidx.recyclerview.widget.RecyclerView... />
+        
+    </FrameLayout>
+
+    ...
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+```
+
+最后两个参数是一个是滚动的方向，一个是滚动的类型。axes表示滑动的方向，有垂直和横向两种类型，取值为ViewCompat#SCROLL_AXIS_HORIZONTAL和ViewCompat#SCROLL_AXIS_VERTICAL。而type表示滑动的类型，取值为ViewCompat#TYPE_TOUCH和ViewCompat#TYPE_NON_TOUCH。
+
+当Behavior想要参与此次的嵌套滑动的时候，需要返回true。
+
+```java
+public void onNestedScrollAccepted(
+	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull V child, 
+    @NonNull View directTargetChild, 
+    @NonNull View target,
+    @ScrollAxis int axes, 
+    @NestedScrollType int type
+)
+```
+
+onNestedScrollAccepted的参数和onStartNestedScroll是一样的，这个方法是当onStartNestedScroll返回true的时候调用的，他与onStartNestedScroll是绑定在一起的，每次onStartNestedScroll返回true都会调用一次这个方法。可以在该方法中去处理嵌套滑动的前置准备，如初始化状态等。
+
+```java
+public void onNestedPreScroll(
+	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull V child, 
+    @NonNull View target, 
+    int dx, 
+    int dy, 
+    @NonNull int[] consumed,
+    @NestedScrollType int type
+)
+
+public void onNestedScroll(
+	@NonNull CoordinatorLayout coordinatorLayout, 
+	@NonNull V child,
+    @NonNull View target, 
+    int dxConsumed, 
+    int dyConsumed, 
+    int dxUnconsumed,
+    int dyUnconsumed, 
+    @NestedScrollType int type, 
+    @NonNull int[] consumed
+)
+```
+
+上面两个方法才是真正滑动的时候回调的方法。在发生嵌套滑动并且Behavior接受了这次滑动后，会先调用onNestedPreScroll方法。注意这个方法是发生在Behavior中的，也就是说，当有滑动事件的时候，是优先传递给Behavior去处理的。其中参数dx和dy表示的是滑动的距离，而数组consumed的长度为2，表示的是Behavior消耗的滑动距离。consumed[0]为对dx的消耗，consumed[1]为对dy的消耗，当Behavior消耗滑动后，需要手动的将消耗的多少填充到数组中。
+
+当Behavior处理完后，剩余的事件会传递给target去处理，当然这时候的处理跟我们无关了，是由target本身的逻辑去处理了。而当target滚动结束后，剩下的事件又会传递到parent中进而传递给Behavior的onNestedScroll方法。该方法的中间四个参数没什么可说的，从名字就可以看出是dy和dy的已消耗的和未消耗的值。consumed数组也是一样的。
+
+```java
+public boolean onNestedPreFling(
+	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull V child, 
+    @NonNull View target, 
+    float velocityX, 
+    float velocityY
+)
+
+public boolean onNestedFling(
+	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull V child, 
+    @NonNull View target, 
+    float velocityX, 
+    float velocityY,
+    boolean consumed
+)
+```
+
+当子View发生惯性滑动也就是fling的时候，同样是先传递给Behavior。也就是onNestedPreFling方法，Behavior需要在这个方法中去判断是否需要消耗这次的惯性滑动，若是需要的话则返回true。然后就是交还给
 
 
 
 
 
+```java
+ public void onStopNestedScroll(
+ 	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull V child, 
+    @NonNull View target, 
+    @NestedScrollType int type
+)
+```
 
+在滚动结束后，会调用onStopNestedScroll方法，可以在这个方法中去做一些收尾工作。所以嵌套滑动一共涉及到七个方法，滑动刚开始的两个方法，滑动过程中的两个方法，惯性滑动的两个方法，以及收尾的一个方法。并且，滑动事件的顺序都是子View->Behavior->子View->Behavior。因此滑动过程和惯性滑动过程都是两个方法，一个是第一次开始处理，一个是子View处理后剩下的再去处理。
 
+#### 小例子
+
+## 总结
+
+首先，Behavior是一个插件，它是CoordinatorLayout抽取出来的一个标准。CoordinatorLayout将本身的各种能力抽取到了Behavior中，在需要的时候去加载它从而实现某些交互。
+
+其次，Behavior一共有四种能力：测量布局，依赖，touch，嵌套滑动。其中依赖和嵌套滑动用的是最多的，然后是布局和测量，最后才是touch。
+
+当学会了Behavior的各个方法的使用后，就可以设计出各种花里胡哨的操作了。
 
 
 
