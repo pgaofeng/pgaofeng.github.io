@@ -491,7 +491,7 @@ public void onNestedScroll(
 
 上面两个方法才是真正滑动的时候回调的方法。在发生嵌套滑动并且`Behavior`接受了这次滑动后，会先调用`onNestedPreScroll`方法。注意这个方法是发生在`Behavior`中的，也就是说，当有滑动事件的时候，是优先传递给`Behavior`去处理的。其中参数`dx`和`dy`表示的是滑动的距离，而数组`consumed`的长度为2，表示的是`Behavior`消耗的滑动距离。`consumed[0]`为对`dx`的消耗，`consumed[1]`为对`dy`的消耗，当`Behavior`消耗滑动后，需要手动的将消耗的多少填充到数组中。
 
-当`Behavior`处理完后，剩余的事件会传递给`target`去处理，当然这时候的处理跟我们无关了，是由`target`本身的逻辑去处理了。而当`target`滚动结束后，剩下的事件又会传递到`parent`中进而传递给`Behavior`的`onNestedScroll`方法。该方法的中间四个参数没什么可说的，从名字就可以看出是`dx`和`dy`的已消耗的和未消耗的值。`consumed`数组也是一样的。
+当`Behavior`处理完后，剩余的事件会传递给`target`去处理，当然这时候的处理跟我们无关了，是由`target`本身的逻辑去处理了。而当`target`滚动结束后，剩下的事件又会传递到`parent`中进而传递给`Behavior`的`onNestedScroll`方法。该方法的中间四个参数没什么可说的，从名字就可以看出是`dx`和`dy`的已消耗的和未消耗的值。`consumed`数组也是一样的，存放消耗的事件。注意的是，此时`consumed`数据可能是已经有值的，因此我们消耗后，需要进行叠加而不是赋值。例如消耗`deltaY`，则应该`consumed[1] += deltaY`。
 
 ```java
 public boolean onNestedPreFling(
@@ -526,6 +526,8 @@ public boolean onNestedFling(
 在滚动结束后，会调用`onStopNestedScroll`方法，可以在这个方法中去做一些收尾工作。所以嵌套滑动一共涉及到七个方法，滑动刚开始的两个方法，滑动过程中的两个方法，惯性滑动的两个方法，以及收尾的一个方法。并且，滑动事件的顺序都是`子View->Behavior->子View->Behavior`。因此滑动过程和惯性滑动过程都是两个方法，一个是第一次开始处理，一个是子`View`处理后剩下的再去处理。
 
 #### 小例子
+
+[使用Behavior实现一个跟随滚动的嵌套滑动效果](./Behavior小例子.md)
 
 ## 总结
 
