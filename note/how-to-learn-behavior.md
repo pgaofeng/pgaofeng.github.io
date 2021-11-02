@@ -1,4 +1,4 @@
-# 学习Behavior，先从它的使用开始入手
+# 方法介绍+小例子，我学会了Behavior
 
 学习`Behavior`，先从用法开始。因为用法是最简单易学的，因为它的复杂逻辑都会被隐藏在内部，暴露给外部使用的都是很简单易理解的方法，因此，学习需要从用法开始，再深入到源码理解思路。
 
@@ -6,15 +6,15 @@
 
 首先，`Behavior`是`CoordinatorLayout`的一个子类，而`CoordinatorLayout`呢，从名字看，它是一个协调布局，换句话说就是一个控制者、主持人、幕后黑手。
 
-它的功能就是操控它的子`View`，让他们进行互动。其中互动包括依赖关系（某个view依赖另一个view而进行交互），测量布局（控制子view的测量过程和布局过程），touch事件（自由指定某个view拦截事件），嵌套滑动（多个布局共同滑动）等。
+它的功能就是操控它的子`View`，让他们进行互动。其中互动包括**依赖关系**（某个view依赖另一个view而进行交互），**测量布局**（控制子view的测量过程和布局过程），**touch事件**（自由指定某个view拦截事件），**嵌套滑动**（多个布局共同滑动）等。
 
-但是这么多功能都写在`CoordinatorLayout`中显然是不可能的，因为这样会让它非常臃肿，并且不够自由，只能使用它定义好的一些交互行为。因此，将这些功能从`CoordinatorLayout`中抽取出来，单独行成一个模块，在这个模块中定义标准，可由开发者自定义根据标准自定义各种交互，然后由`CoordinatorLayout`去加载来操作。
+但是这么多功能都写在`CoordinatorLayout`中显然是不可能的，因为这样会让它非常臃肿，并且不够自由，只能使用它定义好的一些交互行为。因此，将这些功能从`CoordinatorLayout`中抽取出来，单独形成一个模块，在这个模块中定义标准，可由开发者根据标准自定义各种交互，然后由`CoordinatorLayout`去加载来操作。
 
 所以`Behavior`是什么这个问题就知道了，它是`CoordinatorLayout`抽取出来的这个模块，更贴切的说应该是一个插件标准。
 
 ## Behavior能做什么
 
-`Behavior`能做的事，就是前面提到的`CoordinatorLayout`的功能。当然在此之前，先看看如何使用`Behavior`。
+`Behavior`能做的事，就是前面提到的`CoordinatorLayout`的功能。在介绍这些功能之前，先看看如何使用`Behavior`。
 
 ### 使用Behavior
 
@@ -31,7 +31,7 @@ public Behavior(Context context, AttributeSet attrs) {}
 
 - 1，`xml`中设置
 
-  直接在`xml`中通过`app:layout_behavior="xxx"`给某个子view设置`Behavior`，其中`xxx`表示的是`Behavior`的类名。可以是缩略的如`.MyBehavior`，也可以是完整的如`com.xx.test.MyBehavior`。**建议使用完整包名**，毕竟当在`xml`中重定义`package`的时候，会导致出错。
+  直接在`xml`中通过`app:layout_behavior="xxx"`给某个子view设置`Behavior`，其中`xxx`表示的是`Behavior`的类名。可以是缩略的如`.MyBehavior`，也可以是完整的如`com.xx.test.MyBehavior`。**建议使用完整包名**，毕竟当在`xml`中重定义`package`的时候，使用缩略名称会导致出错。
 
 - 2，直接创建实例设置
 
@@ -39,7 +39,7 @@ public Behavior(Context context, AttributeSet attrs) {}
 
 - 3，通过注解进行设置
 
-  使用注解方式也能设置`Behavior`，但是这样的话需要自定义`View`，然后在`View`的类名上添加注解`@DefaultBehavior(MyBehavior.class)`进行绑定。这种方式需要自定义`view`，几乎不使用。
+  使用注解方式也能设置`Behavior`，但是这样的话需要自定义`View`，然后在`View`的类名上添加注解`@DefaultBehavior(MyBehavior.class)`进行绑定。这种方式需要自定义`view`，比较麻烦，几乎不使用。
 
 一般而言，第一种方式是使用最多的，因为使用起来简直不要太简单。并且，第一种方式会走`Behavior`的双参数构造方法，我们甚至可以自定义属性设置在`xml`中然后交给`Behavior`去读取。如下：
 
@@ -56,7 +56,8 @@ public Behavior(Context context, AttributeSet attrs) {}
 - 2，在`xml`中设置这个属性
 
 ```xml
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -96,7 +97,7 @@ class AttrBehavior(
 
 ### Behavior能力之测量和布局
 
-一个`View`的显示，通常经历三个步骤，测量、布局、绘制。而`Behavior`也能实现前两个步骤，这是因为`CoordinatorLayout`将对子`View`的测量和布局的过程放在了`Behavior`中。若是选择自定义测量布局，则`CoordinatorLayout`就不会再去测量布局了。
+一个`View`的显示，通常经历三个步骤：测量、布局、绘制。而在`Behavior`中也能实现前两个步骤，这是因为`CoordinatorLayout`将其对子`View`的测量和布局的过程放在了`Behavior`中。若是选择在Behavior中自定义测量布局，则`CoordinatorLayout`就不会再去对它进行测量布局了。
 
 那么连测量和布局都抽取出去的`CoordinatorLayout`还剩下什么呢？
 
@@ -110,8 +111,8 @@ class AttrBehavior(
 
 ```java
 boolean onMeasureChild(
-	@NonNull CoordinatorLayout parent, 
-	@NonNull V child,
+    @NonNull CoordinatorLayout parent, 
+    @NonNull V child,
     int parentWidthMeasureSpec,
     int widthUsed,
     int parentHeightMeasureSpec, 
@@ -119,8 +120,8 @@ boolean onMeasureChild(
 )
     
 boolean onLayoutChild(
-	@NonNull CoordinatorLayout parent, 
-	@NonNull V child,
+    @NonNull CoordinatorLayout parent, 
+    @NonNull V child,
     int layoutDirection
 )
 ```
@@ -164,7 +165,7 @@ class LayoutBehavior(
 }
 ```
 
-然后在xml中，使用这个Behavior即可：
+然后在`xml`中，使用这个`Behavior`即可：
 
 ```xml
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -202,23 +203,23 @@ class LayoutBehavior(
 
 ```java
 public boolean layoutDependsOn(
-	@NonNull CoordinatorLayout parent, 
-	@NonNull V child,
+    @NonNull CoordinatorLayout parent, 
+    @NonNull V child,
     @NonNull View dependency
 )
 ```
 
 首先，在`Behavior`中通过`layoutDependsOn`方法来确定依赖关系。这个方法有三个参数，第一个参数是父布局`parent`；第二个参数是设置了`Behavior`的那个`View`，被称为`child`；第三个参数就是依赖的`View`。我们需要做的就是在这个方法中去判断`child`与这个`view`是否需要存在依赖关系，若是存在依赖的话，则返回`true`，否则返回`false`。`Behavior`会遍历除了`child`外的其他`view`，然后将其带入这个方法去判断是否是依赖的对象。
 
-例如`parent`有三个子`View`，其中有一个`View`设置了`Behavior`，那么`layoutDependsOn`方法会被调用两次，其中`parent`和`child`参数不变，每次变的是`dependency`参数。因此，依赖关系是一对多的。
+例如`parent`有三个子`View`，其中有一个`View`设置了`Behavior`，那么`layoutDependsOn`方法会被调用两次，其中`parent`和`child`参数不变，每次变的是`dependency`参数。因此，**依赖关系是一对多的**。
 
 > 注意，在Behavior中，都是用parent代表父布局，child代表设置了Behavior的子View
 
 ```java
 public boolean onDependentViewChanged(
-	@NonNull CoordinatorLayout parent, 
-	@NonNull V child,
-   	@NonNull View dependency
+    @NonNull CoordinatorLayout parent, 
+    @NonNull V child,
+    @NonNull View dependency
 )
 ```
 
@@ -226,8 +227,8 @@ public boolean onDependentViewChanged(
 
 ```java
 public void onDependentViewRemoved(
-	@NonNull CoordinatorLayout parent, 
-	@NonNull V child,
+    @NonNull CoordinatorLayout parent, 
+    @NonNull V child,
     @NonNull View dependency
 )
 ```
@@ -311,11 +312,12 @@ class BelowBehavior(
 
 注意一点的是，在`layoutDependsOn`中确定依赖的条件是很简单的，只要`View`是`MovableButton`即可。实际中的条件应该更复杂一些的，因为简单的条件很容易形成多个依赖的`View`。
 
-然后是在`xml`中使用`Behavior`，注意这里都是在`xml`中使用`Behavior`，因为比较简单：
+然后是在`xml`中使用`Behavior`，注意后面都是在`xml`中使用`Behavior`，因为比较简单：
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/parent"
@@ -385,14 +387,14 @@ class BelowActivity : AppCompatActivity() {
 
 ```java
 public boolean onInterceptTouchEvent(
-	@NonNull CoordinatorLayout parent, 
-	@NonNull V child,
+    @NonNull CoordinatorLayout parent, 
+    @NonNull V child,
     @NonNull MotionEvent ev
 )
 
 public boolean onTouchEvent(
-	@NonNull CoordinatorLayout parent, 
-	@NonNull V child,
+    @NonNull CoordinatorLayout parent, 
+    @NonNull V child,
     @NonNull MotionEvent ev
 )
 ```
@@ -407,15 +409,15 @@ public boolean onTouchEvent(
 
 ### Behavior能力之嵌套滑动
 
-当两个可同向滑动的`View`嵌套在一起时，如`ScrollView`有一个子`View`是`RecyclerView`，那么当滚动的时候是先滚动`ScrollView`还是先滚动`RecyclerView`呢？假如是滚动`RecyclerView`，那么当`RecyclerView`快滚动到底部的时候，这时候来一个比较长的滚动，当`RecyclerView`滚动到底部后，剩下的滚动就是没有反应，并不会变成`ScrollView`接着滚动。这是由`View`的事件分发机制造成的，`View`事件分发中，当某个`View`处理事件的时候，这次的事件流就会全部交个它而不会给别的`View`。
+当两个可同向滑动的`View`嵌套在一起时，如`ScrollView`有一个子`View`是`RecyclerView`，那么当滚动的时候是先滚动`ScrollView`还是先滚动`RecyclerView`呢？假如是滚动`RecyclerView`，那么当`RecyclerView`快滚动到底部的时候，这时候来一个比较长的滚动，那么当`RecyclerView`滚动到底部后，剩下的滚动事件是没有反应的，并不会变成`ScrollView`接着滚动。这是由`View`的事件分发机制造成的，`View`事件分发中，当某个`View`处理事件的时候，这次的事件流就会全部交给它而不会给别的`View`。
 
-而嵌套滑动就是用来处理这种冲突的，尤其是它实现了将一个事件流交给多个`View`去处理这种功能，从而可以让滑动更加流畅更加符合我们的期望。它使用两套接口来实现这种功能，分别是`NestedScrollingChild3`和`NestedScrollingParent3`，对应着子`View`和父`View`，当然也可以同时实现这两个接口，这样就可以为所欲为了。
+而嵌套滑动就是用来处理这种冲突的，尤其是它实现了将一个事件流交给多个`View`去处理的这种功能，从而可以让滑动更加流畅更加符合我们的期望。它使用两套接口来实现这种功能，分别是`NestedScrollingChild3`和`NestedScrollingParent3`，对应着子`View`和父`View`，当然也可以同时实现这两个接口，这样就可以为所欲为了。
 
-虽然`CoordinatorLayout`也实现了`NestedScrollingParent3`接口，但是它并不是像传统的那种嵌套滑动一样来处理滑动事件，而是将滑动事件代理给了`Behavior`，也就是在嵌套滑动中，是`Behavior`来作为`parent`处理滑动事件的。也就是说，`CoordinatorLayout`中的嵌套滑动并不需要嵌套，同时，由于在嵌套滑动中作为`parent`的是`Behavior`，所以实际上想要作为`parent`的子`View`只需要设置`Behavior`即可，而不用去实现`NestedScrollingChild3`接口。
+虽然`CoordinatorLayout`也实现了`NestedScrollingParent3`接口，但是它并不是像传统的那种嵌套滑动一样来处理滑动事件，而是将滑动事件委托给了`Behavior`，也就是在嵌套滑动中，实际上是`Behavior`来作为`parent`处理滑动事件的。也就是说，`CoordinatorLayout`中的嵌套滑动并不需要嵌套，同时，由于在嵌套滑动中作为`parent`的是`Behavior`，所以实际上想要作为`parent`的子`View`只需要设置`Behavior`即可，而不用去实现`NestedScrollingParent3`接口。
 
-总之，`CoordinatorLayout`使用嵌套滑动逻辑实现了一套不是嵌套滑动的嵌套滑动。
+总之，**`CoordinatorLayout`使用嵌套滑动逻辑实现了一套不是嵌套滑动的嵌套滑动**。
 
-> 注意，嵌套滑动必须由`NestedScrollingChild3`发起，`RecyclerView`就实现了这个方法
+> 注意，嵌套滑动必须由`NestedScrollingChild3`发起，`RecyclerView`就实现了这个接口。
 
 #### 对应的方法
 
@@ -448,13 +450,13 @@ public boolean onStartNestedScroll(
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
 ```
 
-最后两个参数是一个是滚动的方向，一个是滚动的类型。`axes`表示滑动的方向，有垂直和横向两种类型，取值为`ViewCompat#SCROLL_AXIS_HORIZONTAL`和`ViewCompat#SCROLL_AXIS_VERTICAL`。而`type`表示滑动的类型，取值为`ViewCompat#TYPE_TOUCH`和`ViewCompat#TYPE_NON_TOUCH`。
+最后两个参数是一个是滚动的方向，一个是滚动的类型。`axes`表示滑动的方向，有水平和垂直两种类型，取值为`ViewCompat#SCROLL_AXIS_HORIZONTAL`和`ViewCompat#SCROLL_AXIS_VERTICAL`。而`type`表示滑动的类型，有触摸滚动和非触摸滚动（惯性滚动），取值为`ViewCompat#TYPE_TOUCH`和`ViewCompat#TYPE_NON_TOUCH`。
 
 当`Behavior`想要参与此次的嵌套滑动的时候，需要返回`true`。
 
 ```java
 public void onNestedScrollAccepted(
-	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull CoordinatorLayout coordinatorLayout,
     @NonNull V child, 
     @NonNull View directTargetChild, 
     @NonNull View target,
@@ -467,7 +469,7 @@ public void onNestedScrollAccepted(
 
 ```java
 public void onNestedPreScroll(
-	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull CoordinatorLayout coordinatorLayout,
     @NonNull V child, 
     @NonNull View target, 
     int dx, 
@@ -477,8 +479,8 @@ public void onNestedPreScroll(
 )
 
 public void onNestedScroll(
-	@NonNull CoordinatorLayout coordinatorLayout, 
-	@NonNull V child,
+    @NonNull CoordinatorLayout coordinatorLayout, 
+    @NonNull V child,
     @NonNull View target, 
     int dxConsumed, 
     int dyConsumed, 
@@ -495,7 +497,7 @@ public void onNestedScroll(
 
 ```java
 public boolean onNestedPreFling(
-	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull CoordinatorLayout coordinatorLayout,
     @NonNull V child, 
     @NonNull View target, 
     float velocityX, 
@@ -503,7 +505,7 @@ public boolean onNestedPreFling(
 )
 
 public boolean onNestedFling(
-	@NonNull CoordinatorLayout coordinatorLayout,
+    @NonNull CoordinatorLayout coordinatorLayout,
     @NonNull V child, 
     @NonNull View target, 
     float velocityX, 
@@ -512,14 +514,14 @@ public boolean onNestedFling(
 )
 ```
 
-当子`View`发生惯性滑动也就是`flin`的时候，同样是先传递给`Behavior`。也就是`onNestedPreFling`方法，`Behavior`需要在这个方法中去判断是否需要消耗这次的惯性滑动，若是需要的话则返回`true`。然后就是再交还给子`View`去进行判断是否需要显示`overScroll`，然后再通过`onNestedFling`传递回`Behavior`中。其中参数`consumed`表示嵌套子`View`(发起滚动的子`View`)是否消耗此次惯性滑动，若是`Behavior`需要消耗此次滚动，则需要返回`true`。
+当子`View`发生惯性滑动也就是`fling`的时候，同样是先传递给`Behavior`。也就是`onNestedPreFling`方法，`Behavior`需要在这个方法中去判断是否需要消耗这次的惯性滑动，若是需要的话则返回`true`。然后就是再交还给子`View`去进行判断是否需要显示`overScroll`，然后再通过`onNestedFling`传递回`Behavior`中进行真正的惯性滑动处理。其中参数`consumed`表示嵌套子`View`(发起滚动的子`View`)是否消耗此次惯性滑动，若是`Behavior`需要消耗此次滚动，则需要返回`true`。
 
 ```java
  public void onStopNestedScroll(
- 	@NonNull CoordinatorLayout coordinatorLayout,
-    @NonNull V child, 
-    @NonNull View target, 
-    @NestedScrollType int type
+     @NonNull CoordinatorLayout coordinatorLayout,
+     @NonNull V child, 
+     @NonNull View target, 
+     @NestedScrollType int type
 )
 ```
 
@@ -527,7 +529,11 @@ public boolean onNestedFling(
 
 #### 小例子
 
-[使用Behavior实现一个跟随滚动的嵌套滑动效果](./Behavior小例子.md)
+使用一个小例子一步一步说明Behavior的各个方法的使用情况及使用方式，链接：[使用Behavior实现一个跟随滚动的嵌套滑动效果](./behavior-nested-demo.md)
+
+
+
+完整代码： [点击跳转github链接](https://github.com/pgaofeng/AndroidBehavior)
 
 ## 总结
 
@@ -535,7 +541,7 @@ public boolean onNestedFling(
 
 其次，`Behavior`一共有四种能力：**测量布局，依赖，touch，嵌套滑动**。其中依赖和嵌套滑动用的是最多的，然后是布局和测量，最后才是touch。
 
-当学会了`Behavior`的各个方法的使用后，就可以设计出各种花里胡哨的操作了。
+当学会了`Behavior`的各个方法的使用后，就可以设计出各种花里胡哨的操作了，也就学会了Behavior了。
 
 
 

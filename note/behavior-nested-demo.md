@@ -1,6 +1,6 @@
 # 使用Behavior实现一种跟随滚动的嵌套滑动效果
 
-本文将使用`Behavior`的多种能力，依赖布局嵌套滑动等，实现一种常用的嵌套机制。目标效果如下：
+本文是对文章中[方法介绍+小例子，我学会了Behavior](../how-to-learn-behavior)的拓展，将使用`Behavior`的多种能力，依赖布局嵌套滑动等，实现一种常用的嵌套机制。目标效果如下：
 
 ![嵌套滑动](../images/behavior-nested2.gif)
 
@@ -11,7 +11,7 @@
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -290,6 +290,10 @@ class TouchBehavior(...) {
 修改后的如下图所示：
 
 ![嵌套滑动2](../images/behavior-nested2.gif)
+
+
+
+完整代码在这里： [点击跳转github链接](https://github.com/pgaofeng/AndroidBehavior)
 
 
 
