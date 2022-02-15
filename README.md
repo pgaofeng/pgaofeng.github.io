@@ -14,6 +14,33 @@
 
 ## 曾遇到的问题
 
-1. `2021-08-20：` 在`nova 7(Android 10,EMUI 11.0.0)`上，`paint.setFakeBoldText(true)`不论传的参数是`true`还是`false`，使用`paint.measureText(text)`获取的结果都是一样的，都是未加粗的字体的宽度。
-2. `2021-08-30：` 在使用`WebView`加载本地`assets`中的`html`文件时，快速关闭打开`activity`会显示空白。只要在`onDestroy`的时候调用`webView.destroy()`即可。
+1. 在`nova 7(Android 10,EMUI 11.0.0)`上，`paint.setFakeBoldText(true)`不论传的参数是`true`还是`false`，使用`paint.measureText(text)`获取的结果都是一样的，都是未加粗的字体的宽度。
+2. 在使用`WebView`加载本地`assets`中的`html`文件时，快速关闭打开`activity`会显示空白。只要在`onDestroy`的时候调用`webView.destroy()`即可。
 
+3. `webView`中图片和视频大小会超过屏幕范围，可以通过手动设置其宽高来解决。
+
+   ```kotlin
+   private fun resetSize() {
+       webView.loadUrl(
+           """
+           javascript:( function(){
+               var objs = document.getElementsByTagName('video');
+               for(var i=0;i<objs.length;i++) {
+                   var img = objs[i];
+                   img.style.maxWidth = '100%';
+                   img.style.height = 'auto';
+               }
+               
+               var objs = document.getElementsByTagName('img');
+               for(var i=0;i<objs.length;i++) {
+                   var img = objs[i];
+                   img.style.maxWidth = '100%';
+                   img.style.height = 'auto';
+               }
+           })()
+        """.trimIndent()
+       )
+   }
+   ```
+
+   
