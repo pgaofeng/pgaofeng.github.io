@@ -16,7 +16,6 @@ $(".highlight").wrap("<div class='code-wrapper' style='position:relative'></div>
         $(".code-wrapper .highlight table").before(copyHtml);
         var clipboard = new ClipboardJS('.btn-copy', {
             target: function (trigger) {
-				console.log("target = " + trigger.nextElementSibling)
                 var tablee = trigger.nextElementSibling;
 				return tablee;
             }
