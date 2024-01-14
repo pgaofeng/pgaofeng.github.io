@@ -21,5 +21,6 @@ $(document).ready(function() {
             $("#container").toggleClass("translate");
         }
     });
+	mediumZoom(document.querySelectorAll('img'));
 
 });
