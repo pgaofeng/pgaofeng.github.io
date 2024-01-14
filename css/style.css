@@ -878,3 +878,28 @@ footer {
     margin-right: -20px !important;
   }
 }
+/*代码块复制按钮*/
+/* 代码块复制按钮 */
+.btn-copy {
+  display: inline-block;
+  cursor: pointer;
+  background-color: transparent;
+  border: 0px solid transparent;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-appearance: none;
+  -webkit-transition: opacity 0.3s ease-in-out;
+  -o-transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.3s ease-in-out;
+  padding: 2px 6px;
+  position: absolute;
+  right: 6px;
+  top: 21px;
+  opacity: 0;
+}
+
+.code-wrapper:hover .btn-copy {
+  opacity: 1;
+}
