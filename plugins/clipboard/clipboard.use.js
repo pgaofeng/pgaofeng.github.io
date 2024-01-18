@@ -1,4 +1,5 @@
-$(".highlight").wrap("<div class='code-wrapper' style='position:relative'></div>");
+$(document).ready(function() {
+    $(".highlight").wrap("<div class='code-wrapper' style='position:relative'></div>");
 /*页面载入完成后，创建复制按钮*/
 !function (e, t, a) {
     /* code */
@@ -31,3 +32,9 @@ $(".highlight").wrap("<div class='code-wrapper' style='position:relative'></div>
     }
     initCopyCode();
 }(window, document);
+
+});
+
+
+
+
