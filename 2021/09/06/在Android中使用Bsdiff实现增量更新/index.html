@@ -1,4 +1,31 @@
-<!DOCTYPE html><html lang="en"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content=""><meta name="theme-color" content="#2d4356"><meta name="baidu-site-verification"><title>在Android中使用Bsdiff实现增量更新 | 没有感情的代码机器</title><link rel="stylesheet" type="text/css" href="/css/style.css"><link rel="Shortcut Icon" type="image/x-icon" href="/img/blog.svg"><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css"><script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script><meta name="generator" content="Hexo 7.0.0"></head><link rel="stylesheet" type="text/css" href="/plugins/highlight/atom-one-dark.min.css"><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script><script>hljs.addPlugin({
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content=""><meta name="theme-color" content="#2d4356"><meta name="baidu-site-verification"><title>在Android中使用Bsdiff实现增量更新 | 没有感情的代码机器</title><link rel="stylesheet" type="text/css" href="/css/style.css"><link rel="Shortcut Icon" type="image/x-icon" href="/img/blog.svg"><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css"><script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script><script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/medium-zoom/1.0.8/medium-zoom.min.js"></script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js"> </script><script>$(document).ready(function() {
+    $(".highlight").wrap("<div class='code-wrapper' style='position:relative'></div>");
+    // 复制图标
+    var copy = `<svg t="1705200653788" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6341" width="16" height="16"><path d="M394.666667 106.666667h448a74.666667 74.666667 0 0 1 74.666666 74.666666v448a74.666667 74.666667 0 0 1-74.666666 74.666667H394.666667a74.666667 74.666667 0 0 1-74.666667-74.666667V181.333333a74.666667 74.666667 0 0 1 74.666667-74.666666z m0 64a10.666667 10.666667 0 0 0-10.666667 10.666666v448a10.666667 10.666667 0 0 0 10.666667 10.666667h448a10.666667 10.666667 0 0 0 10.666666-10.666667V181.333333a10.666667 10.666667 0 0 0-10.666666-10.666666H394.666667z m245.333333 597.333333a32 32 0 0 1 64 0v74.666667a74.666667 74.666667 0 0 1-74.666667 74.666666H181.333333a74.666667 74.666667 0 0 1-74.666666-74.666666V394.666667a74.666667 74.666667 0 0 1 74.666666-74.666667h74.666667a32 32 0 0 1 0 64h-74.666667a10.666667 10.666667 0 0 0-10.666666 10.666667v448a10.666667 10.666667 0 0 0 10.666666 10.666666h448a10.666667 10.666667 0 0 0 10.666667-10.666666v-74.666667z" fill="#e6e6e6" p-id="6342"></path></svg>`;
+    // 复制成功图标
+    var copySuccess = `<svg t="1705201112559" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8469" width="16" height="16"><path d="M469.333333 640l0.384 0.384L469.333333 640z m-106.282666 0l-0.384 0.384 0.384-0.384z m48.512 106.666667a87.466667 87.466667 0 0 1-61.653334-24.874667l-179.52-173.632a67.797333 67.797333 0 0 1 0-98.24c28.032-27.157333 73.493333-27.157333 101.589334 0l139.584 134.997333 319.168-308.544c28.032-27.157333 73.493333-27.157333 101.589333 0a67.925333 67.925333 0 0 1 0 98.24L472.981333 722.069333A87.530667 87.530667 0 0 1 411.562667 746.666667z" fill="#e6e6e6" p-id="8470"></path></svg>`;
+
+    var copyHtml = '';
+    copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+    copyHtml += copy;
+    copyHtml += '</button>';
+    $(".code-wrapper .highlight table").before(copyHtml);
+    var clipboard = new ClipboardJS('.btn-copy', {
+        target: function (trigger) {
+            var tablee = trigger.nextElementSibling;
+            return tablee;
+        }
+    });
+    clipboard.on('success', function (e) {
+        e.trigger.innerHTML = copySuccess
+        setTimeout(function () {
+            e.trigger.innerHTML = copy
+        }, 1000)
+       
+        e.clearSelection();
+    });
+    mediumZoom(document.querySelectorAll('img'));
+});</script><meta name="generator" content="Hexo 7.0.0"></head><link rel="stylesheet" type="text/css" href="/plugins/highlight/atom-one-dark.min.css"><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script><script>hljs.addPlugin({
     "before:highlightBlock": ({ block }) => {
          block.innerHTML = block.innerHTML.replace(/\n/g, '').replace(/<br[ /]*>/g, '\n');
     },
@@ -6,11 +33,43 @@
           result.value = result.value.replace(/\n/g, "<br>");
     }
 });
-</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js"></script><script type="text/javascript" src="/plugins/clipboard/clipboard.use.js" async> </script><script type="text/javascript" src="/js/ready.js" async></script><script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/medium-zoom/1.0.8/medium-zoom.min.js"></script><script type="text/javascript" src="https://apps.bdimg.com/libs/jquery-lazyload/1.9.5/jquery.lazyload.min.js"></script><script>jQuery(document).ready(function($){
-    $("img").lazyload({
-        placeholder : "https://pic1.zhimg.com/70/v2-d856731e019f41a30e836f9a037524b6_1440w.avis?source=172ae18b&biz_tag=Post", //加载图片前的占位图片
-        effect      : "fadeIn" //加载图片使用的效果(淡入)
+</script><script>$(document).ready(function() {
+    $(".m-nav a").hover(function() {
+        $(this).prev().addClass("dot-hover")
+    }, function() {
+        $(this).prev().removeClass("dot-hover")
+    })
+
+    $(".navbar-icon").click(function() {
+        if((!$(".navbar-icon").hasClass("icon-click")) && (!$(".navbar-icon").hasClass("icon-out")))
+            $(".navbar-icon").toggleClass("icon-click");
+        else
+            $(".navbar-icon").toggleClass("icon-click icon-out");
+        $("#menu").toggleClass("h-wrapper mobile-menu");
+        $("#container").toggleClass("translate");
     });
+
+    $("#container").click(function() {
+        if($(".navbar-icon").hasClass("icon-click")) {
+            $(".navbar-icon").toggleClass("icon-click icon-out");
+            $("#menu").toggleClass("h-wrapper mobile-menu");
+            $("#container").toggleClass("translate");
+        }
+    });
+    $(window).scroll(function() {
+        var height = $(window).scrollTop();
+        if (height > 300) {
+            $('#back2Top').fadeIn(500);
+        } else {
+            $('#back2Top').fadeOut(500);
+        }
+    });
+    $("#back2Top").click(function(event) {
+        event.preventDefault();
+        $("html, body").animate({ scrollTop: 0 }, "slow");
+        return false;
+    });
+    mediumZoom(document.querySelectorAll('img'));
 });
 </script><body class="night"><div class="mobile-head" id="mobile-head"><div class="navbar-icon"><span></span><span></span><span></span></div><div class="navbar-title"><a href="/">PGAOFENG</a></div><div class="navbar-search"><!--= show a circle here--></div></div><div class="h-wrapper" id="menu"><nav class="h-head box"><div class="m-hdimg"><a class="hdimg img" href="/"><img class="nofancybox" src="/img/profile.jpg" width="128" height="128"></a><h1 class="ttl"><a href="/">没有感情的代码机器</a></h1></div><p class="m-desc">不写bug的程序员,<br>不是一个好的程序员！</p><div class="m-nav"><ul><li><span class="dot">●</span><a href="/archives/">归档</a></li><li><span class="dot">●</span><a href="/categories/">分类</a></li><li><span class="dot">●</span><a href="/tags/">标签</a></li><li><span class="dot">●</span><a href="/about/">关于</a></li><li class="m-sch"></li></ul><div id="local-search-result"></div></div></nav></div><div id="back2Top"><a class="fa fa-arrow-up" title="Back to top" href="#"></a></div><div class="box" id="container"><div class="l-wrapper"><div class="l-content box"><div class="l-post l-post-art"><article class="p-art"><div class="p-header box"><h1 class="p-title">在Android中使用Bsdiff实现增量更新</h1><div class="p-info"><span class="p-date"><i class="fa fa-calendar"></i><a href="/2021/09/06/%E5%9C%A8Android%E4%B8%AD%E4%BD%BF%E7%94%A8Bsdiff%E5%AE%9E%E7%8E%B0%E5%A2%9E%E9%87%8F%E6%9B%B4%E6%96%B0/">2021-09-06</a></span><span class="p-category"><i class="fa fa-folder"></i><a href="/categories/Android/">Android</a></span></div></div><div class="p-content"><p><img src="/img/cover-bsdiff.webp" alt="img"></p>
 <p>在<code>Android</code>中，我们应用内更新软件通常是下载完整的安装包，然后进行安装。但是当安装包很大的时候，每次更新都会让用户不爽，因为不仅会消耗很多流量，而且当用户网络不是很好的时候，更新就会很慢，而且会影响到用户体验，比如下载期间占用带宽导致加载图片缓慢等。因此，用户很可能会拒绝更新。</p>
@@ -70,4 +129,4 @@
 <p>但是，实际使用中却很麻烦，因为每次更新后，都需要和之前的所有旧版本<code>apk</code>生成对应的<code>patch</code>分包，然后在获取更新信息的时候，根据传递的版本参数返回对应的<code>patch</code>下载地址。</p>
 <p>这只是一个渠道包的情况，实际上我们线上每个应用商店上传的包都是不同的渠道包，而各个应用商店大概有十来个。也就是说，每次升级，至少要产生十几个<code>patch</code>分包，并且这还只是和一个旧版本<code>apk</code>产生的，而实际中，我们又非常多的旧版本，这也就意味着，<code>patch</code>分包的文件数量将会非常多…</p>
 <p>当然，可以编写脚本文件来管理….</p>
-<script type="text&#x2F;javascript" src="https://unpkg.com/kity@2.0.4/dist/kity.min.js"></script><script type="text&#x2F;javascript" src="https://unpkg.com/kityminder-core@1.4.50/dist/kityminder.core.min.js"></script><script defer="true" type="text&#x2F;javascript" src="https://unpkg.com/hexo-simple-mindmap@0.8.0/dist/mindmap.min.js"></script><link rel="stylesheet" type="text&#x2F;css" href="https://unpkg.com/hexo-simple-mindmap@0.8.0/dist/mindmap.min.css"></div><div class="p-copyright"><blockquote><div class="p-copyright-author"><span class="p-copyright-key">本文作者：</span><span class="p-copytight-value"><a href="mailto:penggaofeng1@163.com">Rmfone</a></span></div><div class="p-copyright-link"><span class="p-copyright-key">本文链接：</span><span class="p-copytight-value"><a href="/2021/09/06/%E5%9C%A8Android%E4%B8%AD%E4%BD%BF%E7%94%A8Bsdiff%E5%AE%9E%E7%8E%B0%E5%A2%9E%E9%87%8F%E6%9B%B4%E6%96%B0/">https://pgaofeng.github.io/2021/09/06/在Android中使用Bsdiff实现增量更新/</a></span></div><div class="p-copyright-note"><span class="p-copyright-key">其他声明：</span><span class="p-copytight-value">本站所有文章均可随意转载，但请注明出处，文章原稿：<a target="_blank" rel="noopener" href="https://github.com/pgaofeng/NoteBook/tree/main/source/_posts">点击跳转Github</a></span></div></blockquote></div></article><div class="p-info box"><span class="p-tags"><i class="fa fa-tag"></i><a href="/tags/%E4%B8%89%E6%96%B9%E5%BA%93/">三方库</a></span></div><aside id="toc"><div class="toc-title">目录</div><nav><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E6%9C%8D%E5%8A%A1%E7%AB%AF%E4%BD%BF%E7%94%A8%E7%9A%84bsdiff"><span class="toc-number">1.</span> <span class="toc-text">编译服务端使用的bsdiff</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8B%E8%BD%BD%E6%BA%90%E7%A0%81"><span class="toc-number">1.1.</span> <span class="toc-text">下载源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%A7%8B%E7%BC%96%E8%AF%91"><span class="toc-number">1.2.</span> <span class="toc-text">开始编译</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E5%B7%AE%E5%88%86%E6%96%87%E4%BB%B6"><span class="toc-number">1.3.</span> <span class="toc-text">生成差分文件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9C%A8Android%E4%B8%AD%E4%BD%BF%E7%94%A8bspatch%E5%90%88%E6%88%90%E5%AE%89%E8%A3%85%E5%8C%85"><span class="toc-number">2.</span> <span class="toc-text">在Android中使用bspatch合成安装包</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%95%E5%85%A5%E6%BA%90%E6%96%87%E4%BB%B6"><span class="toc-number">2.1.</span> <span class="toc-text">引入源文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E5%86%99CMakeLists-txt"><span class="toc-number">2.2.</span> <span class="toc-text">编写CMakeLists.txt</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E5%86%99%E4%BB%A3%E7%A0%81"><span class="toc-number">2.3.</span> <span class="toc-text">编写代码</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">3.</span> <span class="toc-text">总结</span></a></li></ol></nav></aside></div><section class="p-ext"><div class="l-pager l-pager-dtl box"><a class="prev" href="/2021/11/02/CoordinatorLayout%E7%9A%84%E7%A7%98%E5%AF%86%E4%B9%8BBehavior/">&lt; CoordinatorLayout的秘密之Behavior</a><a class="next" href="/2021/08/05/%E5%B0%86Room%E7%9A%84%E4%BD%BF%E7%94%A8%E6%96%B9%E5%BC%8F%E5%A1%9E%E5%88%B0%E8%84%91%E5%AD%90%E9%87%8C/">将Room的使用方式塞到脑子里 &gt;</a></div></section><footer><p>最近更新：2024-01-18 21:05:46 | 本文作者：<a href="/." rel="nofollow">没有感情的代码机器</a><br> </p></footer></div></div></div><script type="text/javascript" src="/js/top.js"></script></body></html>
+<script type="text&#x2F;javascript" src="https://unpkg.com/kity@2.0.4/dist/kity.min.js"></script><script type="text&#x2F;javascript" src="https://unpkg.com/kityminder-core@1.4.50/dist/kityminder.core.min.js"></script><script defer="true" type="text&#x2F;javascript" src="https://unpkg.com/hexo-simple-mindmap@0.8.0/dist/mindmap.min.js"></script><link rel="stylesheet" type="text&#x2F;css" href="https://unpkg.com/hexo-simple-mindmap@0.8.0/dist/mindmap.min.css"></div><div class="p-copyright"><blockquote><div class="p-copyright-author"><span class="p-copyright-key">本文作者：</span><span class="p-copytight-value"><a href="mailto:penggaofeng1@163.com">Rmfone</a></span></div><div class="p-copyright-link"><span class="p-copyright-key">本文链接：</span><span class="p-copytight-value"><a href="/2021/09/06/%E5%9C%A8Android%E4%B8%AD%E4%BD%BF%E7%94%A8Bsdiff%E5%AE%9E%E7%8E%B0%E5%A2%9E%E9%87%8F%E6%9B%B4%E6%96%B0/">https://pgaofeng.github.io/2021/09/06/在Android中使用Bsdiff实现增量更新/</a></span></div><div class="p-copyright-note"><span class="p-copyright-key">其他声明：</span><span class="p-copytight-value">本站所有文章均可随意转载，但请注明出处，文章原稿：<a target="_blank" rel="noopener" href="https://github.com/pgaofeng/NoteBook/tree/main/source/_posts">点击跳转Github</a></span></div></blockquote></div></article><div class="p-info box"><span class="p-tags"><i class="fa fa-tag"></i><a href="/tags/%E4%B8%89%E6%96%B9%E5%BA%93/">三方库</a></span></div><aside id="toc"><div class="toc-title">目录</div><nav><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E6%9C%8D%E5%8A%A1%E7%AB%AF%E4%BD%BF%E7%94%A8%E7%9A%84bsdiff"><span class="toc-number">1.</span> <span class="toc-text">编译服务端使用的bsdiff</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8B%E8%BD%BD%E6%BA%90%E7%A0%81"><span class="toc-number">1.1.</span> <span class="toc-text">下载源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%A7%8B%E7%BC%96%E8%AF%91"><span class="toc-number">1.2.</span> <span class="toc-text">开始编译</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E5%B7%AE%E5%88%86%E6%96%87%E4%BB%B6"><span class="toc-number">1.3.</span> <span class="toc-text">生成差分文件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9C%A8Android%E4%B8%AD%E4%BD%BF%E7%94%A8bspatch%E5%90%88%E6%88%90%E5%AE%89%E8%A3%85%E5%8C%85"><span class="toc-number">2.</span> <span class="toc-text">在Android中使用bspatch合成安装包</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%95%E5%85%A5%E6%BA%90%E6%96%87%E4%BB%B6"><span class="toc-number">2.1.</span> <span class="toc-text">引入源文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E5%86%99CMakeLists-txt"><span class="toc-number">2.2.</span> <span class="toc-text">编写CMakeLists.txt</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E5%86%99%E4%BB%A3%E7%A0%81"><span class="toc-number">2.3.</span> <span class="toc-text">编写代码</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">3.</span> <span class="toc-text">总结</span></a></li></ol></nav></aside></div><section class="p-ext"><div class="l-pager l-pager-dtl box"><a class="prev" href="/2021/11/02/CoordinatorLayout%E7%9A%84%E7%A7%98%E5%AF%86%E4%B9%8BBehavior/">&lt; CoordinatorLayout的秘密之Behavior</a><a class="next" href="/2021/08/05/%E5%B0%86Room%E7%9A%84%E4%BD%BF%E7%94%A8%E6%96%B9%E5%BC%8F%E5%A1%9E%E5%88%B0%E8%84%91%E5%AD%90%E9%87%8C/">将Room的使用方式塞到脑子里 &gt;</a></div></section><footer><p>最近更新：2024-01-18 22:22:18 | 本文作者：<a href="/." rel="nofollow">没有感情的代码机器</a><br> </p></footer></div></div></div></body></html>
